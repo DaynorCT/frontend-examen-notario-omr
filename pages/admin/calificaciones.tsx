@@ -370,13 +370,14 @@ const Calificar = () => {
         }}
         onClick={() => inputFileRef.current?.click()}
       >
-        <input
+       <input
           type="file"
           accept="image/png, image/jpeg"
           hidden
           multiple
           ref={inputFileRef}
           onChange={handleFileChange}
+          {...{ webkitdirectory: '' }}
         />
         <CloudUploadIcon sx={{ fontSize: 48, color: '#1976d2', mb: 1 }} />
         <Typography fontWeight={600} color="#1976d2">
