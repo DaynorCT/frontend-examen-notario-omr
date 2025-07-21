@@ -4,18 +4,16 @@ import { useForm } from 'react-hook-form'
 
 import { Box, Button, DialogActions, DialogContent, Grid } from '@mui/material'
 import { FormInputText } from '../../../../common/components/ui/form'
-import { FiltroModalPostulanteType, FiltroPostulanteType } from './FiltroPostulante'
+import { FiltroCategoriaType, FiltroModalCategoriaType } from './FiltroCategoria'
 
-export const FiltroModalPostulante = ({
-  filtroNombre,
-  filtroCI,
+export const FiltroModalCategoria = ({
+  filtroDescripcion,
   accionCorrecta,
-}: FiltroModalPostulanteType) => {
-  const { handleSubmit, control } = useForm<FiltroPostulanteType>({
+}: FiltroModalCategoriaType) => {
+  const { handleSubmit, control } = useForm<FiltroCategoriaType>({
     defaultValues: {
-      ci:   filtroCI,
-      nombreCompleto: filtroNombre,
-    },
+      descripcion: filtroDescripcion,
+    }
   })
 
   return (
@@ -26,20 +24,10 @@ export const FiltroModalPostulante = ({
           <Grid container direction="row" spacing={{ xs: 2, sm: 1, md: 2 }}>
           <Grid item xs={12} sm={12} md={6}>
               <FormInputText
-                id={'nombreCompleto'}
-                name={'nombreCompleto'}
+                id={'descripcion'}
+                name={'descripcion'}
                 control={control}
-                label={'Nombre Completo'}
-                bgcolor={'background.paper'}
-                clearable
-              />
-            </Grid>
-            <Grid item xs={12} sm={12} md={6}>
-              <FormInputText
-                id={'ci'}
-                name="ci"
-                control={control}
-                label="C.I."
+                label={'Categoria'}
                 bgcolor={'background.paper'}
                 clearable
               />
