@@ -3,6 +3,7 @@ import { CategoriaCRUDType } from '../../categoria/types/categoriaCRUDTypes'
 export interface OpcionPreguntaType {
   id?: string
   descripcion: string
+  nota: string
   correcto: boolean
   orden: number
   estado?: string
@@ -11,7 +12,8 @@ export interface OpcionPreguntaType {
 // Tipo para crear o editar una pregunta con opciones
 export interface CrearEditarPreguntaConOpcionesType {
   id?: string                // Solo para editar, opcional
-  descripcion: string        // Texto de la pregunta
+  descripcion: string  
+  nota: string // nota de la pregunta
   idCategoria: string        // ID de la categoría seleccionada
   opciones: OpcionPreguntaType[] // Array de opciones (a, b, c, d)
   orden?: number             // Opcional, si usas orden de preguntas
@@ -22,9 +24,11 @@ export interface CrearEditarPreguntaConOpcionesType {
 export interface PreguntaCRUDType {
   id?: string
   descripcion: string
+  nota: string
   idCategoria: string
   categoriaDescripcion?: string
   estado: string
+  estadoPregunta?: string // <-- ahora es opcional
   opciones?: OpcionPreguntaType[]
   categoria?: CategoriaCRUDType // <-- Agregado para reflejar la respuesta del backend
 }

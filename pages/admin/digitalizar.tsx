@@ -80,10 +80,10 @@ const Digitalizar: NextPage = () => {
     Array<CriterioOrdenType>
   >([
     { campo: 'codigo', nombre: 'Código', ordenar: true },
-    { campo: 'grupo', nombre: 'Grupo', ordenar: true },
-    { campo: 'hojaSobre', nombre: 'Hoja Sobre', ordenar: true },
+    // { campo: 'grupo', nombre: 'Grupo', ordenar: true },
     { campo: 'hojaPreguntas', nombre: 'Hoja Preguntas', ordenar: true },
     { campo: 'hojaRespuesta', nombre: 'Hoja Respuesta', ordenar: true },
+    { campo: 'hojaSobre', nombre: 'Hoja Sobre', ordenar: true },
     { campo: 'estado', nombre: 'Estado', ordenar: true },
   ])
 
@@ -96,36 +96,39 @@ const Digitalizar: NextPage = () => {
       >
         {examenGenerado.codigo}
       </Typography>,
-      <Typography
-        key={`${examenGenerado.id}-${indexExamenGenerado}-grupo`}
-        variant={'body2'}
-      >
-        {examenGenerado.grupo}
-      </Typography>,
-      <IconoTooltip
-        key={`${examenGenerado.id}-${indexExamenGenerado}-hojaSobre`}
-        id={`hojaSobre-${examenGenerado.id}`}
-        titulo="Ver Hoja Sobre"
-        color="info"
-        accion={() => abrirPDFsobre(examenGenerado.id)}
-        icono="contact_mail"
-        name="hojaSobre"
-      />,
-      <Typography
-        key={`${examenGenerado.id}-${indexExamenGenerado}-hojaPreguntas`}
-        variant={'body2'}
-      >
-        {examenGenerado.hojaPreguntas}
-      </Typography>,
+      // <Typography
+      //   key={`${examenGenerado.id}-${indexExamenGenerado}-grupo`}
+      //   variant={'body2'}
+      // >
+      //   {examenGenerado.grupo}
+      // </Typography>,
+       <IconoTooltip
+       key={`${examenGenerado.id}-${indexExamenGenerado}-hojaPreguntas`}
+       id={`hojaPreguntas-${examenGenerado.id}`}
+       titulo="Ver Hoja Preguntas"
+       color="primary"
+       accion={() => abrirPDFPreguntas(examenGenerado.id)}
+       icono="list_alt"
+       name="hojaPreguntas"
+     />,
       <IconoTooltip
         key={`${examenGenerado.id}-${indexExamenGenerado}-hojaRespuesta`}
         id={`hojaPregunta-${examenGenerado.id}`}
         titulo="Ver Hoja Respuesta"
         color="primary"
-        accion={() => abrirPDF(examenGenerado.id)}
+        accion={() => abrirPDFRespuesta(examenGenerado.id)}
         icono="description"
         name="hojaRespuesta"
       />,
+      <IconoTooltip
+      key={`${examenGenerado.id}-${indexExamenGenerado}-hojaSobre`}
+      id={`hojaSobre-${examenGenerado.id}`}
+      titulo="Ver Hoja Sobre"
+      color="info"
+      accion={() => abrirPDFsobre(examenGenerado.id)}
+      icono="contact_mail"
+      name="hojaSobre"
+    />,
       <CustomMensajeEstado
         key={`${examenGenerado.id}-${indexExamenGenerado}-estado`}
         titulo={examenGenerado.estado}
@@ -206,6 +209,7 @@ const Digitalizar: NextPage = () => {
         },
       })
       setExamenGeneradoData(respuesta.datos?.filas)
+      console.log(respuesta.datos?.filas, '+++++++++++++++++++++++++++++++++++++++++++++')
       setTotal(respuesta.datos?.total)
       setErrorExamenGeneradoData(null)
     } catch (e) {
@@ -216,8 +220,29 @@ const Digitalizar: NextPage = () => {
       setLoading(false)
     }
   }
-
-  const abrirPDF = async (id: string) => {
+  const abrirPDFPreguntas = async (id: string) => {
+    try {
+      const respuesta = await sesionPeticion({
+        url: `${Constantes.baseUrl}/examen-generado/${id}/preguntas`,
+        tipo: 'get',
+      });
+      // El backend devuelve un objeto con base64 en respuesta.datos
+      if (respuesta?.datos?.base64) {
+        // Convertir base64 a data URL
+        const dataUrl = `data:application/pdf;base64,${respuesta.datos.base64}`;
+        setPdfUrl(dataUrl);
+        setOpenDialog(true);
+      } else {
+        throw new Error('No se recibió el contenido del PDF');
+      }
+    } catch (e: any) {
+      let mensajeError = 'Error al abrir el PDF'
+    
+      Alerta({ mensaje: mensajeError, variant: 'error' })
+    }
+  }
+  
+  const abrirPDFRespuesta = async (id: string) => {
     try {
       const respuesta = await sesionPeticion({
         url: `${Constantes.baseUrl}/examen-generado/${id}/pdf`,

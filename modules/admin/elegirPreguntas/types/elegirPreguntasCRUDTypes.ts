@@ -6,6 +6,7 @@ export interface OpcionPreguntaType {
   correcto: boolean
   orden: number
   estado?: string
+  estadoPregunta?: string
 }
 
 // Tipo para crear o editar una pregunta con opciones
@@ -16,6 +17,7 @@ export interface CrearEditarPreguntaConOpcionesType {
   opciones: OpcionPreguntaType[] // Array de opciones (a, b, c, d)
   orden?: number             // Opcional, si usas orden de preguntas
   estado?: string
+  estadoPregunta?: string
 }
 
 // Tipo para mostrar una pregunta (por ejemplo, en una tabla)

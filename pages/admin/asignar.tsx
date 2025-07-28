@@ -31,7 +31,7 @@ import { ordenFiltrado } from '../../common/utils/orden'
 import { imprimir } from '../../common/utils/imprimir'
 import { ModalVerPDF } from '../../modules/admin/digitalizar/ui/ModalVerPDF'
 import { ExamenGeneradoCRUDType } from '../../modules/admin/digitalizar/types/ExamenGeneradoCRUDTypes'
-import { Autocomplete } from '@mui/material'
+
 import { AsignarPostulantePayload, CodigoExamenType, PostulanteCodigoCRUDType, PostulanteSelectType } from '../../modules/admin/asignar/types/asignarCRUDTypes'
 
 const Asignar: NextPage = () => {
@@ -57,9 +57,7 @@ const Asignar: NextPage = () => {
   //variable que contiene el estado del examen que está editando
   const [] = useState<ExamenGeneradoCRUDType | undefined | null >()
   
-  // cargar los ci y los postulantes
-  const [postulantes, setPostulantes] = useState<PostulanteSelectType[]>([])
-  const [codigosExamen, setCodigosExamen] = useState<CodigoExamenType[]>([])
+
 
 
   // Variables de paginado
@@ -169,66 +167,7 @@ const Asignar: NextPage = () => {
     setLoading(false);
   }
  }
-  const obtenerCiPostulante= async () => {
-    try {
-      setLoading(true)
 
-      const respuesta = await sesionPeticion({
-        url: `${Constantes.baseUrl}/examen-generado/listar-ci-postulante`,
-        params: {
-          pagina: pagina,
-          limite: limite,
-          ...(ordenFiltrado(ordenCriterios).length > 0
-            ? { orden: ordenFiltrado(ordenCriterios).join(',') }
-            : {}),
-        },
-      })
-      let filas = respuesta.datos?.filas;
-      if (!Array.isArray(filas)) {
-        filas = filas ? [filas] : [];
-      }
-      setPostulantes(filas);
-      console.log('postulantes:', filas);
-      setTotal(respuesta.datos?.total)
-      setErrorExamenGeneradoData(null)
-    } catch (e) {
-      imprimir(`Error al obtener los CI de los postulantes`, e)
-      setErrorExamenGeneradoData(e)
-      Alerta({ mensaje: `${InterpreteMensajes(e)}`, variant: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const obtenerCodExamen= async () => {
-    try {
-      setLoading(true)
-
-      const respuesta = await sesionPeticion({
-        url: `${Constantes.baseUrl}/examen-generado/listar-cod-examen`,
-        params: {
-          pagina: pagina,
-          limite: limite,
-          ...(ordenFiltrado(ordenCriterios).length > 0
-            ? { orden: ordenFiltrado(ordenCriterios).join(',') }
-            : {}),
-        },
-      })
-      let filas = respuesta.datos?.filas;
-      if (!Array.isArray(filas)) {
-        filas = filas ? [filas] : [];
-      }
-      setCodigosExamen(filas);
-      setTotal(respuesta.datos?.total)
-      setErrorExamenGeneradoData(null)
-    } catch (e) {
-      imprimir(`Error al obtener los Codigos Examen`, e)
-      setErrorExamenGeneradoData(e)
-      Alerta({ mensaje: `${InterpreteMensajes(e)}`, variant: 'error' })
-    } finally {
-      setLoading(false)
-    }
-  }
   // Seleccionados
   const [ciSeleccionado, setCiSeleccionado] = useState('')
   const [codigoExamenSeleccionado, setCodigoExamenSeleccionado] = useState('')
@@ -238,26 +177,18 @@ const Asignar: NextPage = () => {
   // Handler para asignar
   const handleAsignar = async () => {
     if (!ciSeleccionado || !codigoExamenSeleccionado) {
-      Alerta({ mensaje: 'Seleccione CI y Código de Examen', variant: 'warning' })
-      return
-    }
-    // Buscar el objeto postulante y examen por el valor seleccionado
-    const postulante = postulantes.find(p => p.ci === ciSeleccionado);
-    const examen = codigosExamen.find(e => e.codigo === codigoExamenSeleccionado);
-
-    if (!postulante || !examen) {
-      Alerta({ mensaje: 'Error al encontrar los datos seleccionados', variant: 'error' })
+      Alerta({ mensaje: 'Ingrese CI y Código de Examen', variant: 'warning' })
       return
     }
 
-    const payload: AsignarPostulantePayload = {
-      id: examen.id,           // id del examen seleccionado
-      idPostulante: postulante.id // id del postulante seleccionado
+    const payload = {
+      ci: ciSeleccionado,
+      codigo: codigoExamenSeleccionado
     };
 
     try {
       await sesionPeticion({
-        url: `${Constantes.baseUrl}/examen-generado/asignar-postulante`,
+        url: `${Constantes.baseUrl}/examen-generado/asignar-postulante-ci-codigo`,
         tipo: 'post',
         body: payload
       });
@@ -265,35 +196,14 @@ const Asignar: NextPage = () => {
       setCiSeleccionado('');
       setCodigoExamenSeleccionado('');
       await obtenerPostulanteCiCodPeticion();
-      await obtenerCiPostulante()
-      await  obtenerCodExamen()// Recargar la tabla automáticamente
     } catch (e) {
       Alerta({ mensaje: 'Error al asignar', variant: 'error' });
     }
   }
 
-  useEffect(() => {
-    if (estaAutenticado) obtenerCiPostulante().finally(() => {})   
-  },[
-    estaAutenticado,
-    pagina,
-    limite,
-    // eslint-disble-nest-line react-ooks/exaustive-deps
-    JSON.stringify(ordenCriterios)
-  ])
-  
-  useEffect(() => {
-    if (estaAutenticado) obtenerCodExamen().finally(() => {})   
-  },[
-    estaAutenticado,
-    pagina,
-    limite,
-    // eslint-disble-nest-line react-ooks/exaustive-deps
-    JSON.stringify(ordenCriterios)
-  ])
 
   useEffect(() => {
-    if (estaAutenticado)obtenerPostulanteCiCodPeticion().finally(() => {})   
+    if (estaAutenticado) obtenerPostulanteCiCodPeticion().finally(() => {})   
   },[
     estaAutenticado,
     pagina,
@@ -328,36 +238,26 @@ const Asignar: NextPage = () => {
         <Typography variant="h5" mb={2}>Asignar</Typography>
         {/* Formulario de asignación */}
         <Box display="flex" alignItems="center" gap={2} mb={3}>
-          {/* Autocomplete para CI */}
-          <FormControl sx={{ minWidth: 220 }} size="small">
-            <Autocomplete
-              id="ci-autocomplete"
-              options={postulantes}
-              getOptionLabel={option => `${option.ci}`}
-              value={postulantes.find(p => p.ci === ciSeleccionado) || null}
-              onChange={(_, newValue) => setCiSeleccionado(newValue ? newValue.ci : '')}
-              renderInput={(params) => (
-                <TextField {...params} label="CI" size="small" />
-              )}
-              isOptionEqualToValue={(option, value) => option.ci === value.ci}
-              clearOnEscape
-            />
-          </FormControl>
-          {/* Autocomplete para Código de Examen */}
-          <FormControl sx={{ minWidth: 220 }} size="small">
-            <Autocomplete
-              id="cod-examen-autocomplete"
-              options={codigosExamen}
-              getOptionLabel={option => `${option.codigo}`}
-              value={codigosExamen.find(e => e.codigo === codigoExamenSeleccionado) || null}
-              onChange={(_, newValue) => setCodigoExamenSeleccionado(newValue ? newValue.codigo || '' : '')}
-              renderInput={(params) => (
-                <TextField {...params} label="Código Examen" size="small" />
-              )}
-              isOptionEqualToValue={(option, value) => option.codigo === value.codigo}
-              clearOnEscape
-            />
-          </FormControl>
+          {/* Campo de texto para CI */}
+          <TextField
+            id="ci-input"
+            label="CI"
+            value={ciSeleccionado}
+            onChange={(e) => setCiSeleccionado(e.target.value)}
+            size="small"
+            sx={{ minWidth: 220 }}
+            placeholder="Ingrese el CI"
+          />
+          {/* Campo de texto para Código de Examen */}
+          <TextField
+            id="codigo-examen-input"
+            label="Código Examen"
+            value={codigoExamenSeleccionado}
+            onChange={(e) => setCodigoExamenSeleccionado(e.target.value)}
+            size="small"
+            sx={{ minWidth: 220 }}
+            placeholder="Ingrese el código del examen"
+          />
           <Button variant="contained" color="primary" onClick={handleAsignar}>
             Asignar
           </Button>
@@ -366,9 +266,7 @@ const Asignar: NextPage = () => {
               titulo={'Actualizar'}
               key={`accionActualizarExamenGenerado`}
               accion={async () => {
-                await obtenerCiPostulante()
-                await obtenerCodExamen()
-                await obtenerPostulanteCiCodPeticion() // <-- AGREGAR ESTA LÍNEA
+                await obtenerPostulanteCiCodPeticion()
               }}
               icono={'refresh'}
               name={'Actualizar lista de exámenes'}

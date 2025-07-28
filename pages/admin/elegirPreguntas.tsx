@@ -66,6 +66,12 @@ const Preguntas: NextPage = () => {
   const [mostrarSoloSeleccionadas, setMostrarSoloSeleccionadas] = useState(false)
   // Estado para preguntas seleccionadas del backend
   const [preguntasSeleccionadasBackend, setPreguntasSeleccionadasBackend] = useState<PreguntaCRUDType[]>([]);
+  
+  const [seleccionFinalizada, setSeleccionFinalizada] = useState(false);
+
+  const [confirmarFinalizar, setConfirmarFinalizar] = useState(false);
+
+  const [preguntasFinalizadasData, setPreguntasFinalizadasData] = useState<PreguntaCRUDType[]>([]);
 
   // Proveedor de la sesión
   const { sesionPeticion } = useSession()
@@ -97,10 +103,16 @@ const Preguntas: NextPage = () => {
 
   /// Contenido del data table
   const preguntasParaMostrar = mostrarSoloSeleccionadas
-    ? preguntasSeleccionadasBackend
+    ? (seleccionFinalizada ? preguntasFinalizadasData : preguntasSeleccionadasBackend)
     : preguntasData
 
-  const contenidoTabla: Array<Array<ReactNode>> = preguntasParaMostrar.map(
+  const preguntasParaMostrarArray = Array.isArray(preguntasParaMostrar)
+    ? preguntasParaMostrar.filter(Boolean)
+    : preguntasParaMostrar
+      ? [preguntasParaMostrar]
+      : [];
+
+  const contenidoTabla: Array<Array<ReactNode>> = preguntasParaMostrarArray.map(
     (preguntasData, indexPreguntas) => [
       // Checkbox de selección
       <Checkbox
@@ -118,6 +130,7 @@ const Preguntas: NextPage = () => {
           }
         }}
         color="primary"
+       disabled={preguntasData.estadoPregunta === 'SELECCIONADO'}
       />,
       <Typography
         key={`${preguntasData.id}-${indexPreguntas}-nro`}
@@ -149,12 +162,28 @@ const Preguntas: NextPage = () => {
       // Estado
       <CustomMensajeEstado
         key={`${preguntasData.id}-${indexPreguntas}-estado`}
-        titulo={preguntasData.estado}
-        descripcion={preguntasData.estado}
+        titulo={
+          mostrarSoloSeleccionadas && seleccionFinalizada
+            ? preguntasData.estadoPregunta
+            : preguntasData.estado
+        }
+        descripcion={
+          mostrarSoloSeleccionadas && seleccionFinalizada
+            ? preguntasData.estadoPregunta
+            : preguntasData.estado
+        }
         color={
-          preguntasData.estado === 'ACTIVO'
+          (mostrarSoloSeleccionadas && seleccionFinalizada
+            ? preguntasData.estadoPregunta
+            : preguntasData.estado) === 'SELECCIONADO'
+            ? 'info'
+            : (mostrarSoloSeleccionadas && seleccionFinalizada
+              ? preguntasData.estadoPregunta
+              : preguntasData.estado) === 'ACTIVO'
             ? 'success'
-            : preguntasData.estado === 'INACTIVO'
+            : (mostrarSoloSeleccionadas && seleccionFinalizada
+              ? preguntasData.estadoPregunta
+              : preguntasData.estado) === 'INACTIVO'
             ? 'error'
             : 'info'
         }
@@ -186,15 +215,38 @@ const Preguntas: NextPage = () => {
         </MenuItem>
       ))}
     </TextField>,
+    !seleccionFinalizada && (
+      <Button
+        key="finalizar-seleccion"
+        variant="contained"
+        color="success"
+        sx={{ ml: 2, mt: 2, mb: 2 }}
+        disabled={preguntasSeleccionadas.length === 0}
+        onClick={() => setConfirmarFinalizar(true)}
+      >
+        Finalizar selección
+      </Button>
+    ),
     <Button
       key="ver-seleccionadas"
       variant={mostrarSoloSeleccionadas ? 'outlined' : 'contained'}
       color="secondary"
       sx={{ ml: 2, mt: 2, mb: 2 }}
-      disabled={preguntasSeleccionadas.length === 0}
       onClick={async () => {
         if (!mostrarSoloSeleccionadas) {
-          await obtenerPreguntasSeleccionadas();
+          if (seleccionFinalizada) {
+            const resp = await preguntasFinalizadas();
+            const filas = resp.datos.filas;
+            setPreguntasFinalizadasData(
+              Array.isArray(filas)
+                ? filas
+                : filas
+                  ? [filas]
+                  : []
+            );
+          } else {
+            await obtenerPreguntasSeleccionadas();
+          }
         }
         setMostrarSoloSeleccionadas(!mostrarSoloSeleccionadas);
       }}
@@ -218,6 +270,22 @@ const Preguntas: NextPage = () => {
       tipo: 'patch',
     });
   };
+
+   // Función para desmarcar pregunta como seleccionada
+   const finalizarSeleccion = async () => {
+    await sesionPeticion({
+      url: `${Constantes.baseUrl}/preguntas/accion/finalizar-seleccion`,
+      tipo: 'patch',
+    });
+  };
+  
+  //Funcion para llamar las preguntas seleccionadas/finalizadas
+  const preguntasFinalizadas = async () =>
+  await sesionPeticion({
+    url: `${Constantes.baseUrl}/preguntas?estadoPregunta=SELECCIONADO`,
+    tipo: 'get',
+  });
+  // Aquí actualizas la UI para mostrar solo las preguntas finalizadas
   // Petición para obtener preguntas
   const obtenerPreguntasPeticion = async () => {
     try {
@@ -310,19 +378,38 @@ const Preguntas: NextPage = () => {
     setPermisos(await permisoUsuario(router.pathname))
   }
 
+  
   useEffect(() => {
     definirPermisos().finally()
   }, [estaAutenticado])
 
+   // estio preoce a llamr a als preguntas en estado finalizado
   useEffect(() => {
-    if (estaAutenticado) obtenerPreguntasPeticion().finally(() => {})   
-  },[
+    if (estaAutenticado) {
+      obtenerPreguntasPeticion().finally(() => {});
+      const checkFinalizado = async () => {
+        const resp = await preguntasFinalizadas();
+        if (resp.finalizado) {
+          setSeleccionFinalizada(true);
+          setPreguntasFinalizadasData(
+            Array.isArray(resp.datos.filas)
+              ? resp.datos.filas
+              : [resp.datos.filas]
+          );
+        } else {
+          setSeleccionFinalizada(false);
+          setPreguntasFinalizadasData([]);
+        }
+      };
+      checkFinalizado();
+    }
+  }, [
     estaAutenticado,
     pagina,
     limite,
     JSON.stringify(ordenCriterios),
     categoriaSeleccionada,
-  ])
+  ]);
 
   useEffect(() => {
     if (estaAutenticado) obtenerCategoriaPeticion().finally(() => {})   
@@ -368,6 +455,43 @@ const Preguntas: NextPage = () => {
           paginacion={paginacion}
           contenidoTabla={contenidoTabla}
         />
+        {seleccionFinalizada && (
+          <Typography color="success.main" sx={{ mt: 2 }}>
+            Selección finalizada. Ya no puedes modificar las preguntas seleccionadas.
+          </Typography>
+        )}
+        <AlertDialog
+          isOpen={confirmarFinalizar}
+          titulo="¿Estás seguro de finalizar la selección?"
+          texto="Una vez finalices la selección, no podrás modificar las preguntas seleccionadas."
+        >
+          <Button onClick={() => setConfirmarFinalizar(false)} color="inherit">
+            Cancelar
+          </Button>
+          <Button
+            onClick={async () => {
+              try {
+                await finalizarSeleccion();
+                setSeleccionFinalizada(true);
+                setConfirmarFinalizar(false);
+                Alerta({
+                  mensaje: 'Selección finalizada correctamente.',
+                  variant: 'success',
+                });
+              } catch (e) {
+                setConfirmarFinalizar(false);
+                Alerta({
+                  mensaje: 'Ocurrió un error al finalizar la selección.',
+                  variant: 'error',
+                });
+              }
+            }}
+            color="success"
+            variant="contained"
+          >
+            Sí, finalizar selección
+          </Button>
+        </AlertDialog>
       </LayoutUser>
     </>
   )

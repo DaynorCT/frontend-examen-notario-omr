@@ -35,14 +35,15 @@ import { CriterioOrdenType } from '../../common/types/ordenTypes'
 import { ordenFiltrado } from '../../common/utils/orden'
 import { BotonAgregar } from '../../common/components/ui/BotonAgregar'
 import { imprimir } from '../../common/utils/imprimir'
-import { ModalVerPDF } from '../../modules/admin/digitalizar/ui/ModalVerPDF'
 import { ExamenGeneradoCRUDType } from '../../modules/admin/digitalizar/types/ExamenGeneradoCRUDTypes'
+import { ModalVerPDF } from '../../modules/admin/calificaciones/ui/ModalVerPDF'
 import React, {useRef} from 'react'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import DeleteIcon from '@mui/icons-material/Delete'
+import { PostulanteConPuntajeType } from '../../modules/admin/calificaciones/types/calificacionesCRUDTypes'
 const Calificar = () => {
   // data de exámenes generados
-  const [examenGeneradoData, setExamenGeneradoData] = useState<ExamenGeneradoCRUDType[]>([])
+  const [notasPostulanteData, setNotaPostulanteData] = useState<PostulanteConPuntajeType[]>([])
 
   // Flag que indica que hay un proceso cargando visualmente
   const [loading, setLoading] = useState<boolean>(true)
@@ -51,7 +52,7 @@ const Calificar = () => {
   const { Alerta } = useAlerts()
 
   /// Indicador de error en una petición
-  const [errorExamenGeneradoData, setErrorExamenGeneradoData] = useState<any>()
+  const [errorNoatasPostulanteData, setErrorNotasPostulanteData] = useState<any>()
 
   /// Indicador para mostrar una ventana modal de examen generado
   const [ ] = useState(false)
@@ -64,7 +65,7 @@ const Calificar = () => {
   const [] = useState<ExamenGeneradoCRUDType | undefined | null >()
   
   // Variables de paginado
-  const [limite, setLimite] = useState<number>(10)
+  const [limite, setLimite] = useState<number>(30)
   const [pagina, setPagina] = useState<number>(1)
   const [total, setTotal] = useState<number>(0)
 
@@ -87,65 +88,79 @@ const Calificar = () => {
   const [ordenCriterios, setOrdenCriterios] = useState<
     Array<CriterioOrdenType>
   >([
-    { campo: 'codigo', nombre: 'Código', ordenar: true },
-    { campo: 'grupo', nombre: 'Grupo', ordenar: true },
-    { campo: 'hojaSobre', nombre: 'Hoja Sobre', ordenar: true },
-    { campo: 'hojaPreguntas', nombre: 'Hoja Preguntas', ordenar: true },
-    { campo: 'hojaRespuesta', nombre: 'Hoja Respuesta', ordenar: true },
+    { campo: 'nombrecompleto', nombre: 'Nombre Completo', ordenar: true },
+    { campo: 'ci', nombre: 'C.I', ordenar: true },
+    { campo: 'puntaje', nombre: 'Puntaje', ordenar: true },
+    { campo: 'puntajeformateado', nombre: 'nota/total', ordenar: true },
+    { campo: 'codigo', nombre: 'Codigo Examen', ordenar: true },
     { campo: 'estado', nombre: 'Estado', ordenar: true },
+    { campo: 'rutaimagen', nombre: 'Imagen', ordenar: true },
+    { campo: 'hojarespuestapintada', nombre: 'PDF Pintado', ordenar: true },
   ])
 
   /// Contenido del data table
-  const contenidoTabla: Array<Array<ReactNode>> = examenGeneradoData.map(
-    (examenGenerado, indexExamenGenerado) => [
+  const contenidoTabla: Array<Array<ReactNode>> = notasPostulanteData.map(
+    (notasPostulante, indexNotasPostulante) => [
       <Typography
-        key={`${examenGenerado.id}-${indexExamenGenerado}-codigo`}
+        key={`${notasPostulante.id}-${indexNotasPostulante}-nombrecompleto`}
         variant={'body2'}
       >
-        {examenGenerado.codigo}
+        {notasPostulante.nombrecompleto}
       </Typography>,
       <Typography
-        key={`${examenGenerado.id}-${indexExamenGenerado}-grupo`}
+        key={`${notasPostulante.id}-${indexNotasPostulante}-ci`}
         variant={'body2'}
       >
-        {examenGenerado.grupo}
+        {notasPostulante.ci}
       </Typography>,
-      <IconoTooltip
-        key={`${examenGenerado.id}-${indexExamenGenerado}-hojaSobre`}
-        id={`hojaSobre-${examenGenerado.id}`}
-        titulo="Ver Hoja Sobre"
-        color="info"
-        accion={() => abrirPDFsobre(examenGenerado.id)}
-        icono="contact_mail"
-        name="hojaSobre"
-      />,
       <Typography
-        key={`${examenGenerado.id}-${indexExamenGenerado}-hojaPreguntas`}
+        key={`${notasPostulante.id}-${indexNotasPostulante}-puntaje`}
         variant={'body2'}
       >
-        {examenGenerado.hojaPreguntas}
+        {notasPostulante.puntaje}
       </Typography>,
-      <IconoTooltip
-        key={`${examenGenerado.id}-${indexExamenGenerado}-hojaRespuesta`}
-        id={`hojaPregunta-${examenGenerado.id}`}
-        titulo="Ver Hoja Respuesta"
-        color="primary"
-        accion={() => abrirPDF(examenGenerado.id)}
-        icono="description"
-        name="hojaRespuesta"
-      />,
+       <Typography
+       key={`${notasPostulante.id}-${indexNotasPostulante}-puntajeformateado`}
+       variant={'body2'}
+     >
+       {notasPostulante.puntajeformateado}
+     </Typography>,
+      <Typography
+      key={`${notasPostulante.id}-${indexNotasPostulante}-codigo`}
+      variant={'body2'}
+    >
+      {notasPostulante.codigo}
+    </Typography>,
       <CustomMensajeEstado
-        key={`${examenGenerado.id}-${indexExamenGenerado}-estado`}
-        titulo={examenGenerado.estado}
-        descripcion={examenGenerado.estado}
+        key={`${notasPostulante.id}-${indexNotasPostulante}-estado`}
+        titulo={notasPostulante.estado}
+        descripcion={notasPostulante.estado}
         color={
-          examenGenerado.estado == 'COMPLETADO'
+          notasPostulante.estado == 'ACTIVO'
             ? 'success'
-            : examenGenerado.estado == 'ERROR'
+            : notasPostulante.estado == 'INACTIVO'
             ? 'error'
             : 'info'
         }
       />,
+      <IconoTooltip
+        key={`${notasPostulante.id}-${indexNotasPostulante}-rutaimagen`}
+        id={`hojaPregunta-${notasPostulante.id}`}
+        titulo="Ver Imagen"
+        color="primary"
+        accion={() => notasPostulante.rutaimagen ? verImagenesPorHash(notasPostulante.rutaimagen) : null}
+        icono="image"
+        name="verImagen"
+      />,
+      <IconoTooltip
+      key={`${notasPostulante.id}-${indexNotasPostulante}-hojarespuestapintada`}
+      id={`acciones-${notasPostulante.id}`}
+      titulo="Ver PDF Pintado"
+      color="primary"
+      accion={() => verPDFPintado(notasPostulante.idexamen)}
+      icono="description"
+      name="verPDFPintado"
+    />,
     ]
   )
   
@@ -189,7 +204,7 @@ const Calificar = () => {
       });
       setMensajeSubida({ tipo: 'success', texto: 'Imágenes subidas correctamente' });
       setArchivos([]);
-      obtenerExameGenePeticion();
+      obtenerCalificacionesPeticion();
     } catch (error) {
       setMensajeSubida({ tipo: 'error', texto: 'Error al subir imágenes' });
     } finally {
@@ -197,33 +212,13 @@ const Calificar = () => {
     }
   };
 
-  
-
-  const agregarEvaluacionModal = async () => {
-    try {
-      // setLoading(true)
-      const respuesta = await sesionPeticion({
-        url: `${Constantes.baseUrl}/examen-generado/generar`,
-        tipo: 'post',
-        body: {},
-      })
-      Alerta({
-        mensaje: InterpreteMensajes(respuesta),
-        variant: 'success',
-      })
-      await obtenerExameGenePeticion()
-    } catch (e) {
-      imprimir(`Error al Generar evaluación: `, e)
-      Alerta({ mensaje: `${InterpreteMensajes(e)}`, variant: 'error' })
-    } 
-  }
-
-  const obtenerExameGenePeticion = async () => {
+ 
+  const obtenerCalificacionesPeticion = async () => {
     try {
       setLoading(true)
 
       const respuesta = await sesionPeticion({
-        url: `${Constantes.baseUrl}/examen-generado`,
+        url: `${Constantes.baseUrl}/postulante/con-puntaje`,
         params: {
           pagina: pagina,
           limite: limite,
@@ -232,44 +227,54 @@ const Calificar = () => {
             : {}),
         },
       })
-      setExamenGeneradoData(respuesta.datos?.filas)
+      setNotaPostulanteData(respuesta.datos?.filas)
       setTotal(respuesta.datos?.total)
-      setErrorExamenGeneradoData(null)
+      setErrorNotasPostulanteData(null)
     } catch (e) {
       imprimir(`Error al obtener parametros`, e)
-      setErrorExamenGeneradoData(e)
+      setErrorNotasPostulanteData(e)
       Alerta({ mensaje: `${InterpreteMensajes(e)}`, variant: 'error' })
     } finally {
       setLoading(false)
     }
   }
 
-  const abrirPDF = async (id: string) => {
+  // Para ver imágenes por hash
+  const verImagenesPorHash = async (rutaimagen: string | null) => {
     try {
+      if (!rutaimagen) {
+        Alerta({ mensaje: 'No hay imagen disponible', variant: 'warning' })
+        return
+      }
+      
+      // Usar el endpoint de imagen por ruta
       const respuesta = await sesionPeticion({
-        url: `${Constantes.baseUrl}/examen-generado/${id}/pdf`,
+        url: `${Constantes.baseUrl}/imagen/file`,
         tipo: 'get',
+        params: { ruta: rutaimagen },
       });
       // El backend devuelve un objeto con base64 en respuesta.datos
       if (respuesta?.datos?.base64) {
-        // Convertir base64 a data URL
-        const dataUrl = `data:application/pdf;base64,${respuesta.datos.base64}`;
+        // Convertir base64 a data URL usando el mimeType del backend
+        const mimeType = respuesta.datos.mimeType || 'image/jpeg'
+        const dataUrl = `data:${mimeType};base64,${respuesta.datos.base64}`;
         setPdfUrl(dataUrl);
         setOpenDialog(true);
       } else {
-        throw new Error('No se recibió el contenido del PDF');
+        throw new Error('No se recibió el contenido de la imagen');
       }
     } catch (e: any) {
-      let mensajeError = 'Error al abrir el PDF'
+      let mensajeError = 'Error al abrir la imagen'
     
       Alerta({ mensaje: mensajeError, variant: 'error' })
     }
   }
   
-  const abrirPDFsobre = async (id: string) => {
+  // Para ver PDF pintado directamente
+  const verPDFPintado = async (idexamen: string) => {
     try {
       const respuesta = await sesionPeticion({
-        url: `${Constantes.baseUrl}/examen-generado/${id}/sobre`,
+        url: `${Constantes.baseUrl}/examen-generado/${idexamen}/pdf-pintado`,
         tipo: 'get',
       });
       // El backend devuelve un objeto con base64 en respuesta.datos
@@ -290,7 +295,7 @@ const Calificar = () => {
 
  
   useEffect(() => {
-    if (estaAutenticado) obtenerExameGenePeticion().finally(() => {})   
+    if (estaAutenticado) obtenerCalificacionesPeticion().finally(() => {})   
   },[
     estaAutenticado,
     pagina,
@@ -437,7 +442,7 @@ const Calificar = () => {
           texto={'Generar reporte de calificaciones'}
           descripcion={'Generar'}
           accion={() => {
-            agregarEvaluacionModal()
+            obtenerCalificacionesPeticion()
           }}
         />
         <IconoTooltip
@@ -445,14 +450,14 @@ const Calificar = () => {
           titulo={'Actualizar lista'}
           key={`accionActualizarExamenGenerado`}
           accion={async () => {
-            await obtenerExameGenePeticion()
+            await obtenerCalificacionesPeticion()
           }}
           icono={'refresh'}
           name={'Actualizar lista de exámenes'}
         />
       </Box>
       <CustomDataTable
-        error={!!errorExamenGeneradoData}
+        error={!!errorNoatasPostulanteData}
         cargando={loading}
         acciones={[]}
         columnas={ordenCriterios}

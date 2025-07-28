@@ -16,7 +16,7 @@ import {
   CustomDialog,
   IconoTooltip,
 } from '../../common/components/ui'
-import { ReactNode, useEffect, useState } from 'react'
+import { ReactNode, useEffect, useState, useRef } from 'react'
 import { CasbinTypes } from '../../common/types'
 import { Constantes } from '../../config'
 import {
@@ -62,9 +62,16 @@ const Preguntas: NextPage = () => {
   const [preguntaEdicion, setPreguntaEdicion] = useState<PreguntaCRUDType | undefined | null>()
 
   // Variables de paginado
-  const [limite, setLimite] = useState<number>(20)
+  const [limite, setLimite] = useState<number>(200)
   const [pagina, setPagina] = useState<number>(1)
   const [total, setTotal] = useState<number>(0)
+
+  // Estado para importación CSV
+  const [importandoCsv, setImportandoCsv] = useState<boolean>(false)
+  const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Estado para generar modelos aleatorios
+  const [generandoModelos, setGenerandoModelos] = useState<boolean>(false)
 
   // Proveedor de la sesión
   const { sesionPeticion } = useSession()
@@ -160,42 +167,32 @@ const Preguntas: NextPage = () => {
     ]
   )
 
-  // Acciones de la tabla
-  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
+  // Función para generar modelos aleatorios
+  const generarModelosAleatorios = async () => {
+    try {
+      setGenerandoModelos(true)
+      
+      const respuesta = await sesionPeticion({
+        url: `${Constantes.baseUrl}/modelos/generar-modelos`,
+        tipo: 'post',
+        body: {},
+      })
 
-  const acciones: Array<ReactNode> = [
-    <TextField
-      select
-      label="Selecciona una categoría"
-      value={categoriaSeleccionada}
-      onChange={(e) => {
-        setCategoriaSeleccionada(e.target.value)
-        setPagina(1) // Opcional: reinicia a la primera página
-      }}
-      sx={{ width: 250, mt: 2, mb: 2 }}
-      key="dropdown-categoria"
-    >
-      <MenuItem value="">
-        <em>Todas las categorías</em>
-      </MenuItem>
-      {categoriaData.map((cat) => (
-        <MenuItem key={cat.id} value={cat.id}>
-          {cat.descripcion}
-        </MenuItem>
-      ))}
-    </TextField>,
-    permisos.create && (
-      <BotonAgregar
-        id={'agregarPregunta'}
-        key={'agregarPregunta'}
-        texto={'Agregar Preguntas'}
-        descripcion={'Agregar pregunta'}
-        accion={() => {
-          agregarPreguntaModal()
-        }}
-      />
-    ),
-  ];
+      Alerta({
+        mensaje: InterpreteMensajes(respuesta),
+        variant: 'success',
+      })
+
+      // Recargar las preguntas después de generar modelos
+      await obtenerPreguntasPeticion()
+    } catch (e) {
+      imprimir(`Error al generar modelos aleatorios:`, e)
+      Alerta({ mensaje: `${InterpreteMensajes(e)}`, variant: 'error' })
+    } finally {
+      setGenerandoModelos(false)
+    }
+  }
+
 
   // Petición para obtener preguntas
   const obtenerPreguntasPeticion = async () => {
@@ -254,6 +251,67 @@ const Preguntas: NextPage = () => {
     }
   }
 
+  // Función para manejar la importación de CSV
+  const handleImportarCsv = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0]
+    if (!file) return
+
+    // Validar que sea un archivo CSV
+    if (!file.name.endsWith('.csv') && file.type !== 'text/csv') {
+      Alerta({ mensaje: 'Solo se permiten archivos CSV', variant: 'error' })
+      return
+    }
+
+    try {
+      setImportandoCsv(true)
+      
+      // Crear FormData para enviar el archivo
+      const formData = new FormData()
+      formData.append('file', file)
+
+      const respuesta = await sesionPeticion({
+        url: `${Constantes.baseUrl}/preguntas/importar-csv`,
+        tipo: 'post',
+        body: formData,
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      })
+
+      Alerta({
+        mensaje: InterpreteMensajes(respuesta),
+        variant: 'success',
+      })
+
+      // Esperar un momento para que el backend procese la importación
+      await delay(1000)
+      
+      // Limpiar el filtro de categoría para mostrar todas las preguntas
+      setCategoriaSeleccionada('')
+      
+      // Mostrar indicador de recarga
+      setLoading(true)
+      
+      // Recargar las preguntas después de la importación
+      await obtenerPreguntasPeticion()
+      
+      // Limpiar el input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = ''
+      }
+    } catch (e) {
+      imprimir(`Error al importar CSV:`, e)
+      Alerta({ mensaje: `${InterpreteMensajes(e)}`, variant: 'error' })
+    } finally {
+      setImportandoCsv(false)
+    }
+  }
+
+  // Función para abrir el selector de archivos
+  const abrirSelectorArchivos = () => {
+    fileInputRef.current?.click()
+  }
+
   // Función para agregar pregunta
   const agregarPreguntaModal = () => {
     setPreguntaEdicion(undefined)
@@ -277,6 +335,56 @@ const Preguntas: NextPage = () => {
   const definirPermisos = async () => {
     setPermisos(await permisoUsuario(router.pathname))
   }
+
+  // Acciones de la tabla
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('');
+
+  const acciones: Array<ReactNode> = [
+    permisos.create && (
+      <Button
+        variant="contained"
+        color="success"
+        onClick={abrirSelectorArchivos}
+        disabled={importandoCsv}
+        sx={{ ml: 1, mr: 1, textTransform: 'none' }}
+        size="small"
+        key="importar-csv"
+      >
+        {importandoCsv ? 'Importando...' : 'Importar CSV'}
+      </Button>
+    ),
+    // Input file oculto para seleccionar archivo CSV
+    <input
+      ref={fileInputRef}
+      type="file"
+      accept=".csv,text/csv"
+      onChange={handleImportarCsv}
+      style={{ display: 'none' }}
+      key="file-input-csv"
+    />,
+    <Button
+      variant="contained"
+      color="warning"
+      onClick={generarModelosAleatorios}
+      disabled={generandoModelos}
+      sx={{ ml: 1, mr: 1, textTransform: 'none' }}
+      size="small"
+      key="generar-aleatorias"
+    >
+      {generandoModelos ? 'Generando...' : 'Generar Preguntas Aleatorias'}
+    </Button>,
+    permisos.create && (
+      <BotonAgregar
+        id={'agregarPregunta'}
+        key={'agregarPregunta'}
+        texto={'Agregar Preguntas'}
+        descripcion={'Agregar pregunta'}
+        accion={() => {
+          agregarPreguntaModal()
+        }}
+      />
+    ),
+  ];
 
   useEffect(() => {
     definirPermisos().finally()

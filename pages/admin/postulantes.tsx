@@ -247,7 +247,7 @@ const Postulantes: NextPage = () => {
       <BotonAgregar
         id={'agregarPostulante'}
         key={'agregarPostulante'}
-        texto={'Agregar'}
+        texto={'Agregar Postulante'}
         descripcion={'Agregar postulante'}
         accion={() => {
           agregarPostulanteModal()

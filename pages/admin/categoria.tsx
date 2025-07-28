@@ -252,7 +252,7 @@ const Categoria: NextPage = () => {
       <BotonAgregar
         id={'agregarCategoria'}
         key={'agregarCategoria'}
-        texto={'Agregar'}
+        texto={'Agregar Categoria'}
         descripcion={'Agregar categoria'}
         accion={() => {
           agregarCategoriaModal()
