@@ -52,6 +52,7 @@ export interface CrearEditarUsuarioType {
   roles: string[]
   estado: string
   correoElectronico: string
+  contrasenaPorDefecto?: string
 }
 
 /// Tipo rol transversal

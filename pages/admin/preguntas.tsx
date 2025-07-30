@@ -97,6 +97,7 @@ const Preguntas: NextPage = () => {
     { campo: 'descripcion', nombre: 'Pregunta', ordenar: true },
     { campo: 'opciones', nombre: 'Opciones', ordenar: false },
     { campo: 'categoria', nombre: 'Categoría', ordenar: true },
+    { campo: 'nota', nombre: 'Marco normativo/justificación', ordenar: true },
     { campo: 'estado', nombre: 'Estado', ordenar: true },
     { campo: 'acciones', nombre: 'Acciones' },
   ])
@@ -128,12 +129,17 @@ const Preguntas: NextPage = () => {
           </Typography>
         ))}
       </Box>,
-
+    
       // Categoría
       <Typography key={`${preguntasData.id}-${indexPreguntas}-categoria`} variant={'body2'}>
         {preguntasData.categoria?.descripcion || preguntasData.categoriaDescripcion || preguntasData.idCategoria || ''}
       </Typography>,
-
+       
+       //Nota
+       <Typography key={`${preguntasData.id}-${indexPreguntas}-nota`} variant={'body2'}>
+       {preguntasData.nota}
+     </Typography>,
+    
       // Estado
       <CustomMensajeEstado
         key={`${preguntasData.id}-${indexPreguntas}-estado`}
@@ -147,7 +153,7 @@ const Preguntas: NextPage = () => {
             : 'info'
         }
       />,
-
+      
       // Acciones
       <Grid key={`${preguntasData.id}-acciones`}>
         {permisos.update && (
@@ -432,6 +438,7 @@ const Preguntas: NextPage = () => {
             id:preguntaEdicion.id,
             idCategoria: preguntaEdicion.idCategoria,
             descripcion: preguntaEdicion.descripcion,
+            nota: preguntaEdicion.nota,
             opciones: (preguntaEdicion.opciones || []).map(op => ({
               id: op.id,
               descripcion: op.descripcion,

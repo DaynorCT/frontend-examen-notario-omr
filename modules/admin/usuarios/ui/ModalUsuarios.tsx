@@ -77,25 +77,34 @@ export const VistaModalUsuario = ({
     try {
       setLoadingModal(true)
       await delay(1000)
+      
+      // Si es un usuario nuevo (sin ID), usar el CI como contraseña
+      const bodyData = {
+        ...usuario,
+        ...{
+          persona: {
+            ...usuario.persona,
+            ...{
+              fechaNacimiento: formatoFecha(
+                usuario.persona.fechaNacimiento,
+                'YYYY-MM-DD'
+              ),
+            },
+          },
+        },
+      }
+      
+      // Si es un usuario nuevo, agregar contraseña por defecto (CI)
+      if (!usuario.id) {
+        bodyData.contrasenaPorDefecto = usuario.persona.nroDocumento
+      }
+      
       const respuesta = await sesionPeticion({
         url: `${Constantes.baseUrl}/usuarios${
           usuario.id ? `/${usuario.id}` : ''
         }`,
         tipo: !!usuario.id ? 'patch' : 'post',
-        body: {
-          ...usuario,
-          ...{
-            persona: {
-              ...usuario.persona,
-              ...{
-                fechaNacimiento: formatoFecha(
-                  usuario.persona.fechaNacimiento,
-                  'YYYY-MM-DD'
-                ),
-              },
-            },
-          },
-        },
+        body: bodyData,
       })
       Alerta({
         mensaje: InterpreteMensajes(respuesta),

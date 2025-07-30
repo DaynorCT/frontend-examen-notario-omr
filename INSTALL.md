@@ -19,7 +19,7 @@ El anterior archivo debe contener las siguientes variables cuyos valores van a v
 
 ```bash
 NEXT_PUBLIC_APP_ENV=development
-NEXT_PUBLIC_SITE_NAME="Frontend base"
+NEXT_PUBLIC_SITE_NAME="Frontend"
 NEXT_PUBLIC_BASE_URL="https://proyecto-base.test.gtic.gob.bo/ws/api"
 ```
 

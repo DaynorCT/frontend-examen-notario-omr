@@ -20,6 +20,7 @@ export interface OpcionPregunta {
 
 export interface PreguntaFormType {
   id?: string
+  nota: string | null
   idCategoria: string
   descripcion: string
   opciones: OpcionPregunta[]
@@ -63,6 +64,7 @@ export const VistaModalPregunta = ({
       id: pregunta?.id || undefined,
       idCategoria: pregunta?.idCategoria || '',
       descripcion: pregunta?.descripcion || '',
+      nota: pregunta?.nota || '',
       opciones: [], // Se arma manualmente al guardar
     },
   })
@@ -98,6 +100,7 @@ export const VistaModalPregunta = ({
     const preguntaEnviar: CrearEditarPreguntaConOpcionesType = {
       id: data.id || undefined, // si existe, es edición
       idCategoria: data.idCategoria,
+      nota: data.nota,
       descripcion: data.descripcion,
       opciones: opciones.map((op, idx) => ({
         id: op.id,
@@ -165,6 +168,17 @@ export const VistaModalPregunta = ({
               disabled={loadingModal}
               multiline
               rows={2}
+            />
+          </Grid>
+          <Grid item>
+            <FormInputText
+              id={'nota'}
+              name={'nota'}
+              control={control}
+              label={'Marco normativo/justificación'}
+              disabled={loadingModal}
+              multiline
+              rows={1}
             />
           </Grid>
           <Grid item>

@@ -53,7 +53,7 @@ const Digitalizar: NextPage = () => {
   const [] = useState<ExamenGeneradoCRUDType | undefined | null >()
   
   // Variables de paginado
-  const [limite, setLimite] = useState<number>(10)
+  const [limite, setLimite] = useState<number>(100)
   const [pagina, setPagina] = useState<number>(1)
   const [total, setTotal] = useState<number>(0)
 

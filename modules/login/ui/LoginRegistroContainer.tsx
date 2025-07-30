@@ -35,7 +35,7 @@ const LoginRegistroContainer = () => {
   const { handleSubmit, control } = useForm<LoginType>({
     defaultValues: {
       usuario: 'ADMINISTRADOR-COMISION',
-      contrasena: '123',
+      contrasena: '7058845',
     },
   })
 
