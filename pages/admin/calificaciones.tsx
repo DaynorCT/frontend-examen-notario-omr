@@ -410,22 +410,23 @@ const Calificar = () => {
         }
         
         .main-title {
-            font-size: 18px;
+            font-size: 14px;
             font-weight: bold;
             text-transform: uppercase;
             margin-bottom: 10px;
-            white-space: pre-line;
-            line-height: 1.2;
+            white-space: normal;
+            line-height: 1.3;
             letter-spacing: 1px;
             text-align: center;
             width: 100%;
+            word-wrap: break-word;
         }
         
         .subtitle {
             font-size: 14px;
             font-weight: bold;
             margin-bottom: 5px;
-            color: #333;
+            color: #2c3e50;
         }
         
         .report-date {
@@ -514,8 +515,9 @@ const Calificar = () => {
                 <img src="{{LOGO_URL}}" alt="Logo" class="official-logo">
             </div>
             <div class="header-center">
-                <div class="main-title">PROCESO DE SELECCIÓN Y DESIGNACIÓN DE </div>
-                <div class="subtitle">SUMARIANTES DISCIPLINARIOS</div>
+                <div class="main-title">PROCESO DE SELECCIÓN Y DESIGNACIÓN
+                                         DE SUMARIANTES DISCIPLINARIOS</div>
+                <div class="subtitle">{{SUBTITULO}}</div>
                 <div class="report-date">1 de Agosto de 2025</div>
             </div>
         </div>
@@ -548,6 +550,7 @@ const Calificar = () => {
     
     const htmlContent = plantillaReporte
       .replace('{{TITULO}}', 'REPORTE DE NOTAS')
+      .replace('{{SUBTITULO}}', 'REPORTE DE NOTAS')
       .replace('{{LOGO_URL}}', '/images/logo.png')
       .replace('{{FECHA}}', new Date().toLocaleDateString())
       .replace('{{ENCABEZADOS_TABLA}}', encabezados)
@@ -569,6 +572,7 @@ const Calificar = () => {
     
     const htmlContent = plantillaReporte
       .replace('{{TITULO}}', 'REPORTE GENERAL DE NOTAS')
+      .replace('{{SUBTITULO}}', 'REPORTE GENERAL DE NOTAS')
       .replace('{{LOGO_URL}}', '/images/logo.png')
       .replace('{{FECHA}}', new Date().toLocaleDateString())
       .replace('{{ENCABEZADOS_TABLA}}', encabezados)
@@ -748,7 +752,7 @@ const Calificar = () => {
   // ])
 
   const paginacion = (
-     < Paginacion
+    < Paginacion
       pagina={pagina}
       limite={limite}
       total={total}
@@ -758,7 +762,7 @@ const Calificar = () => {
   )
   
   return (
-    < >
+    <>
     {/* Modal para ver PDF */}
       <ModalVerPDF
         open={openDialog}

@@ -11,7 +11,7 @@ export const ModalVerPDF: React.FC<ModalVerPDFProps> = ({ open, pdfUrl, onClose 
   return (
   <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>
       {pdfUrl ? (
-        <div style={{ width: '100%', height: '700px'}}>
+        <div style={{ width: '100%', height: '900px'}}>
           <object
             data={pdfUrl}
             type="application/pdf"
