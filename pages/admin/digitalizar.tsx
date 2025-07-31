@@ -57,6 +57,10 @@ const Digitalizar: NextPage = () => {
   const [pagina, setPagina] = useState<number>(1)
   const [total, setTotal] = useState<number>(0)
 
+  // Estado de carga para generar evaluación
+  const [generandoEvaluacion, setGenerandoEvaluacion] = useState<boolean>(false)
+  const [tiempoInicioGeneracion, setTiempoInicioGeneracion] = useState<number | null>(null)
+
   // Proveedor de la sesión
   const { sesionPeticion } = useSession()
   const { estaAutenticado } = useAuth()
@@ -167,8 +171,9 @@ const Digitalizar: NextPage = () => {
     <BotonAgregar
         id={'agregarExamenGenerado'}
         key={'agregarExamenGenerado'}
-        texto={'Generar Evaluación'}
+        texto={generandoEvaluacion ? 'Generando Evaluación...' : 'Generar Evaluación'}
         descripcion={'Agregar'}
+        deshabilitado={generandoEvaluacion}
         accion={() => {
           agregarEvaluacionModal()
         }}
@@ -177,20 +182,56 @@ const Digitalizar: NextPage = () => {
 
   const agregarEvaluacionModal = async () => {
     try {
-      // setLoading(true)
-      const respuesta = await sesionPeticion({
-        url: `${Constantes.baseUrl}/examen-generado/generar`,
-        tipo: 'post',
-        body: {},
+      setGenerandoEvaluacion(true)
+      setTiempoInicioGeneracion(Date.now())
+      
+      // Configurar un timeout de 2 minutos (120000ms) para la petición
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => {
+          reject(new Error('Tiempo de espera agotado. El proceso puede estar ejecutándose en segundo plano.'))
+        }, 120000) // 2 minutos
       })
-      Alerta({
-        mensaje: InterpreteMensajes(respuesta),
-        variant: 'success',
-      })
+
+      const respuesta = await Promise.race([
+        sesionPeticion({
+          url: `${Constantes.baseUrl}/examen-generado/generar`,
+          tipo: 'post',
+          body: {},
+        }),
+        timeoutPromise
+      ])
+
+      const tiempoTranscurrido = Date.now() - (tiempoInicioGeneracion || Date.now())
+      
+      if (tiempoTranscurrido > 60000) { // Si pasó más de 1 minuto
+        Alerta({
+          mensaje: 'Evaluación generada exitosamente. El proceso tardó más de lo esperado pero se completó correctamente.',
+          variant: 'success',
+        })
+      } else {
+        Alerta({
+          mensaje: InterpreteMensajes(respuesta),
+          variant: 'success',
+        })
+      }
+      
       await obtenerExameGenePeticion()
-    } catch (e) {
-      imprimir(`Error al Generar evaluación: `, e)
-      Alerta({ mensaje: `${InterpreteMensajes(e)}`, variant: 'error' })
+    } catch (e: any) {
+      const tiempoTranscurrido = tiempoInicioGeneracion ? Date.now() - tiempoInicioGeneracion : 0
+      
+      if (tiempoTranscurrido > 60000) {
+        // Si pasó más de 1 minuto, asumir que el proceso puede estar ejecutándose
+        Alerta({ 
+          mensaje: 'El proceso de generación está tomando más tiempo del esperado. Se recomienda actualizar la lista en unos minutos para verificar el estado.', 
+          variant: 'info' 
+        })
+      } else {
+        imprimir(`Error al Generar evaluación: `, e)
+        Alerta({ mensaje: `${InterpreteMensajes(e)}`, variant: 'error' })
+      }
+    } finally {
+      setGenerandoEvaluacion(false)
+      setTiempoInicioGeneracion(null)
     } 
   }
 

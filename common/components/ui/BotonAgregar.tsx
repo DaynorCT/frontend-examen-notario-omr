@@ -6,6 +6,7 @@ interface BotonAgregarParams {
   texto: string
   descripcion: string
   accion: () => void
+  deshabilitado?: boolean
 }
 
 export const BotonAgregar = ({
@@ -13,6 +14,7 @@ export const BotonAgregar = ({
   texto,
   descripcion,
   accion,
+  deshabilitado = false,
 }: BotonAgregarParams) => {
   const theme = useTheme()
   const xs = useMediaQuery(theme.breakpoints.only('xs'))
@@ -20,11 +22,12 @@ export const BotonAgregar = ({
     <IconoTooltip
       id={id}
       titulo={descripcion}
-      accion={() => {
+      accion={deshabilitado ? undefined : () => {
         accion()
       }}
       icono={'add_circle_outline'}
       name={texto}
+      desactivado={deshabilitado}
     />
   ) : (
     <Button
@@ -32,6 +35,7 @@ export const BotonAgregar = ({
       variant={'contained'}
       sx={{ ml: 1, mr: 1, textTransform: 'none' }}
       size={'small'}
+      disabled={deshabilitado}
       onClick={() => {
         accion()
       }}
