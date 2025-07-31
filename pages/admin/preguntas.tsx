@@ -289,8 +289,9 @@ const Preguntas: NextPage = () => {
         variant: 'success',
       })
 
-      // Esperar un momento para que el backend procese la importación
-      await delay(1000)
+      // Esperar más tiempo en producción para que el backend procese completamente
+      const tiempoEspera = process.env.NODE_ENV === 'production' ? 3000 : 1000
+      await delay(tiempoEspera)
       
       // Limpiar el filtro de categoría para mostrar todas las preguntas
       setCategoriaSeleccionada('')
@@ -298,8 +299,51 @@ const Preguntas: NextPage = () => {
       // Mostrar indicador de recarga
       setLoading(true)
       
-      // Recargar las preguntas después de la importación
-      await obtenerPreguntasPeticion()
+      // Intentar recargar las preguntas múltiples veces para asegurar sincronización
+      let intentos = 0
+      const maxIntentos = 3
+      let datosActualizados = false
+      
+      while (intentos < maxIntentos && !datosActualizados) {
+        try {
+          await obtenerPreguntasPeticion()
+          
+          // Verificar si los datos se actualizaron correctamente
+          const datosActuales = await sesionPeticion({
+            url: `${Constantes.baseUrl}/preguntas/con-opciones`,
+            params: {
+              pagina: 1,
+              limite: 10, // Solo verificar los primeros 10 registros
+            },
+          })
+          
+          if (datosActuales.datos?.filas && datosActuales.datos.filas.length > 0) {
+            datosActualizados = true
+            Alerta({
+              mensaje: 'Datos actualizados correctamente',
+              variant: 'success',
+            })
+          } else {
+            // Si no hay datos, esperar un poco más y reintentar
+            await delay(2000)
+            intentos++
+          }
+        } catch (error) {
+          intentos++
+          if (intentos >= maxIntentos) {
+            throw error
+          }
+          await delay(2000)
+        }
+      }
+      
+      // Si después de los intentos no se actualizaron los datos, mostrar advertencia
+      if (!datosActualizados) {
+        Alerta({
+          mensaje: 'Los datos pueden tardar en aparecer. Se recomienda actualizar la página en unos minutos.',
+          variant: 'warning',
+        })
+      }
       
       // Limpiar el input
       if (fileInputRef.current) {
