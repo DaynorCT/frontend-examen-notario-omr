@@ -584,7 +584,7 @@ const Calificar = () => {
       fecha: new Date().toLocaleDateString(),
       totalPostulantes: notasPostulanteData.length,
       titulo: tipo === 'ci-nota' ? 'REPORTE DE NOTAS' : 'REPORTE GENERAL DE NOTAS',
-      postulantes: notasPostulanteData.map(item => {
+      postulantes: notasPostulanteData.map((item:any) => {
         return {
           ci: item.ci,
           puntaje: item.puntaje,
@@ -748,7 +748,7 @@ const Calificar = () => {
   // ])
 
   const paginacion = (
-    <Paginacion
+     < Paginacion
       pagina={pagina}
       limite={limite}
       total={total}
@@ -758,7 +758,7 @@ const Calificar = () => {
   )
   
   return (
-    <>
+    < >
     {/* Modal para ver PDF */}
       <ModalVerPDF
         open={openDialog}
@@ -771,7 +771,7 @@ const Calificar = () => {
       />
 <LayoutUser title={`Calificaciones - ${siteName()}`}>
   <Typography variant="h5" mb={2}>Calificaciones</Typography>
-  <Box
+    <Box
     display="flex"
     flexDirection={{ xs: 'column', md: 'row' }}
     alignItems="flex-start"
@@ -794,7 +794,7 @@ const Calificar = () => {
     >
       <Box
         onDrop={handleDrop}
-        onDragOver={e => e.preventDefault()}
+        onDragOver={(e:any)=> e.preventDefault()}
         sx={{
           border: '2.5px dashed #1976d2',
           borderRadius: 2,
@@ -827,13 +827,13 @@ const Calificar = () => {
       </Box>
       {archivos.length > 0 && (
         <List dense sx={{ mt: 1, maxHeight: 90, overflow: 'auto', width: '100%' }}>
-          {archivos.map((file, idx) => (
+          {archivos.map((file:any, idx:any) => (
             <ListItem
               key={file.name + idx}
               secondaryAction={
-                <IconButton edge="end" aria-label="delete" onClick={e => {
+                <IconButton edge="end" aria-label="delete" onClick={(e:any) => {
                   e.stopPropagation()
-                  setArchivos(archivos.filter((_, i) => i !== idx))
+                  setArchivos(archivos.filter((_, i:any) => i !== idx))
                 }}>
                   <DeleteIcon fontSize="small" />
                 </IconButton>
@@ -924,7 +924,7 @@ const Calificar = () => {
         <DialogContent>
           {estadoImagenes.length > 0 ? (
             <List>
-              {estadoImagenes.map((imagen, index) => (
+              {estadoImagenes.map((imagen:any, index:any) => (
                 <ListItem key={index}>
                   <ListItemText
                     primary={imagen.nombre || imagen.ruta || imagen.estado || `Imagen ${index + 1}`}

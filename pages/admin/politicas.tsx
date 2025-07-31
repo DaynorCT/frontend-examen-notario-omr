@@ -195,7 +195,7 @@ const Politicas: NextPage = () => {
               }),
         },
       })
-      setData(respuesta.datos?.filas)
+      setPoliticasData(respuesta.datos?.filas)
       setTotal(respuesta.datos?.total)
       setErrorData(null)
     } catch (e) {
@@ -313,7 +313,7 @@ const Politicas: NextPage = () => {
   }
 
   return (
-    <>
+    < >
       <AlertDialog
         isOpen={mostrarAlertaEliminarPolitica}
         titulo={'Alerta'}
