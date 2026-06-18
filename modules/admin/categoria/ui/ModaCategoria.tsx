@@ -62,8 +62,8 @@ export const VistaModalCategoria = ({
     categoria: CrearEditarCategoriaType
   ) => {
     try {
-      setLoadingModal(true)
-      await delay(1000)
+      //setLoadingModal(true)
+      //await delay(1000)
       const respuesta = await sesionPeticion({
         url: `${Constantes.baseUrl}/categoria${
           categoria.id ? `/${categoria.id}` : ''

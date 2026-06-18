@@ -106,7 +106,6 @@ export const VistaModalPregunta = ({
         id: op.id,
         descripcion: op.descripcion,
         correcto: idx === correcta,
-        orden: idx,
       })),
     };
     console.log('Objeto enviado al backend:', preguntaEnviar);

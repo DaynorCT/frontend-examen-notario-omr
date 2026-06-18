@@ -4,7 +4,6 @@ export interface OpcionPreguntaType {
   id?: string
   descripcion: string
   correcto: boolean
-  orden: number
   estado?: string
 }
 
@@ -15,7 +14,6 @@ export interface CrearEditarPreguntaConOpcionesType {
   nota: string | null // nota de la pregunta
   idCategoria: string        // ID de la categoría seleccionada
   opciones: OpcionPreguntaType[] // Array de opciones (a, b, c, d)
-  orden?: number             // Opcional, si usas orden de preguntas
   estado?: string
 }
 
@@ -25,6 +23,7 @@ export interface PreguntaCRUDType {
   descripcion: string
   idCategoria: string
   nota: string | null
+  orden: number
   categoriaDescripcion?: string
   estado: string
   estadoPregunta?: string // <-- ahora es opcional

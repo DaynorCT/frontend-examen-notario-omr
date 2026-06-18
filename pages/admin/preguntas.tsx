@@ -109,7 +109,7 @@ const Preguntas: NextPage = () => {
         key={`${preguntasData.id}-${indexPreguntas}-nro`}
         variant={'body2'}
       >
-        {(pagina - 1) * limite + indexPreguntas + 1}
+        {preguntasData.orden}
       </Typography>,
       // Pregunta
       <Typography key={`${preguntasData.id}-${indexPreguntas}-descripcion`} variant={'body2'}>
