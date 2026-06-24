@@ -1,4 +1,3 @@
-import type { NextPage } from 'next'
 import {
   Typography,
   useMediaQuery,
@@ -11,10 +10,8 @@ import {
   CircularProgress,
   Box,
   Divider,
-  Paper, // <--- Agregado
-  Alert, // <--- Agregado
-  Dialog,
-  DialogTitle,
+  Paper,
+  Alert,
   DialogContent,
   DialogActions,
 } from '@mui/material'
@@ -22,9 +19,9 @@ import { LayoutUser } from '../../common/components/layouts'
 import {
   CustomDataTable,
   IconoTooltip,
+  CustomDialog,
 } from '../../common/components/ui'
-import { ReactNode, useEffect, useState } from 'react'
-import { CasbinTypes } from '../../common/types'
+import React, { ReactNode, useEffect, useRef, useState } from 'react'
 import { Constantes } from '../../config'
 import {
   InterpreteMensajes,
@@ -32,21 +29,17 @@ import {
 } from '../../common/utils'
 import { useAuth } from '../../context/auth'
 import { Paginacion } from '../../common/components/ui/Paginacion'
-import { useRouter } from 'next/router'
 import { useAlerts, useSession } from '../../common/hooks'
 import CustomMensajeEstado from '../../common/components/ui/CustomMensajeEstado'
 import { CriterioOrdenType } from '../../common/types/ordenTypes'
 import { ordenFiltrado } from '../../common/utils/orden'
-import { BotonAgregar } from '../../common/components/ui/BotonAgregar'
 import { imprimir } from '../../common/utils/imprimir'
-import { ExamenGeneradoCRUDType } from '../../modules/admin/digitalizar/types/ExamenGeneradoCRUDTypes'
 import { ModalVerPDF } from '../../modules/admin/calificaciones/ui/ModalVerPDF'
-import React, {useRef} from 'react'
 import CloudUploadIcon from '@mui/icons-material/CloudUpload'
 import DeleteIcon from '@mui/icons-material/Delete'
-import AssessmentIcon from '@mui/icons-material/Assessment'
 import PictureAsPdfIcon from '@mui/icons-material/PictureAsPdf'
 import { PostulanteConPuntajeType } from '../../modules/admin/calificaciones/types/calificacionesCRUDTypes'
+
 const Calificar = () => {
   // data de exámenes generados
   const [notasPostulanteData, setNotaPostulanteData] = useState<PostulanteConPuntajeType[]>([])
@@ -60,16 +53,10 @@ const Calificar = () => {
   /// Indicador de error en una petición
   const [errorNoatasPostulanteData, setErrorNotasPostulanteData] = useState<any>()
 
-  /// Indicador para mostrar una ventana modal de examen generado
-  const [ ] = useState(false)
-
   //Indicador para abrir el pdf ModalPDF
   const [openDialog, setOpenDialog] = useState(false)
   const [pdfUrl, setPdfUrl] = useState<string | null>(null)
 
-  //variable que contiene el estado del examen que está editando
-  const [] = useState<ExamenGeneradoCRUDType | undefined | null >()
-  
   // Variables de paginado
   const [limite, setLimite] = useState<number>(30)
   const [pagina, setPagina] = useState<number>(1)
@@ -82,23 +69,9 @@ const Calificar = () => {
   const [loadingReporte, setLoadingReporte] = useState(false)
   const [loadingReporteNombreCINota, setLoadingReporteNombreCINota] = useState(false)
 
-  // Nuevos estados para los reportes HTML
-  const [openReporteCINota, setOpenReporteCINota] = useState(false)
-  const [openReporteNombreCINota, setOpenReporteNombreCINota] = useState(false)
-  const [reporteHTML, setReporteHTML] = useState<string>('')
-  const [reporteNombreCINotaHTML, setReporteNombreCINotaHTML] = useState<string>('')
-
   // Proveedor de la sesión
   const { sesionPeticion } = useSession()
   const { estaAutenticado } = useAuth()
-
-  // Permisos para acciones
-  const [ ] = useState<CasbinTypes>({
-    read: false,
-    create: false,
-    update: false,
-    delete: false,
-  })
 
   const theme = useTheme()
   const xs = useMediaQuery(theme.breakpoints.only('xs'))
@@ -182,7 +155,7 @@ const Calificar = () => {
     />,
     ]
   )
-  
+
   const inputFileRef = useRef<HTMLInputElement>(null)
   const [archivos, setArchivos] = useState<File[]>([])
   const [subiendo, setSubiendo] = useState(false)
@@ -207,7 +180,6 @@ const Calificar = () => {
     setArchivos(files)
   }
 
-
   const subirArchivos = async () => {
     setSubiendo(true);
     setMensajeSubida(null);
@@ -231,7 +203,6 @@ const Calificar = () => {
     }
   };
 
- 
   const obtenerCalificacionesPeticion = async () => {
     try {
       setLoading(true)
@@ -265,7 +236,7 @@ const Calificar = () => {
         Alerta({ mensaje: 'No hay imagen disponible', variant: 'warning' })
         return
       }
-      
+
       // Usar el endpoint de imagen por ruta
       const respuesta = await sesionPeticion({
         url: `${Constantes.baseUrl}/imagen/file`,
@@ -284,11 +255,11 @@ const Calificar = () => {
       }
     } catch (e: any) {
       let mensajeError = 'Error al abrir la imagen'
-    
+
       Alerta({ mensaje: mensajeError, variant: 'error' })
     }
   }
-  
+
   // Para ver PDF pintado directamente
   const verPDFPintado = async (idexamen: string) => {
     try {
@@ -307,7 +278,7 @@ const Calificar = () => {
       }
     } catch (e: any) {
       let mensajeError = 'Error al abrir el PDF'
-    
+
       Alerta({ mensaje: mensajeError, variant: 'error' })
     }
   }
@@ -320,10 +291,10 @@ const Calificar = () => {
         url: `${Constantes.baseUrl}/imagen/estado-imagenes`,
         tipo: 'get',
       })
-      
+
       // Verificar diferentes estructuras posibles de respuesta
       const datos = respuesta.datos?.filas || respuesta.datos || respuesta
-      
+
       setEstadoImagenes(Array.isArray(datos) ? datos : [])
       setOpenEstadoImagenes(true)
     } catch (e: any) {
@@ -333,426 +304,78 @@ const Calificar = () => {
     }
   }
 
-  // Plantilla HTML para reportes
-  const plantillaReporte = `
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset="UTF-8">
-    <title>{{TITULO}}</title>
-    <style>
-        @import url('https://fonts.googleapis.com/css2?family=Times+New+Roman:ital,wght@0,400;0,700;1,400&display=swap');
-        
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-        
-        html, body {
-            background: white;
-            font-family: 'Times New Roman', serif;
-            font-size: 12px;
-            line-height: 1.4;
-            color: #000;
-        }
-        
-        .report-container {
-            max-width: 215.9mm;
-            width: 215.9mm;
-            height: 279.4mm;
-            margin: 0 auto;
-            background: white;
-            padding: 15mm;
-            border: 1px solid #000;
-            box-sizing: border-box;
-            position: relative;
-        }
-        
-        /* HEADER OFICIAL */
-        .official-header {
-            display: flex;
-            flex-direction: row !important;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-            border-bottom: 2px solid #000;
-            padding-bottom: 8px;
-            width: 100%;
-            position: relative;
-        }
-        
-        .header-left {
-            display: flex;
-            align-items: center;
-            flex: 0 0 auto;
-            width: 150px;
-        }
-        
-        .official-logo {
-            width: 150px;
-            height: 150px;
-            object-fit: contain;
-        }
-        
-        .header-center {
-            flex: 1;
-            text-align: center;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            margin: 0 20px;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            width: auto;
-        }
-        
-        .main-title {
-            font-size: 14px;
-            font-weight: bold;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            white-space: normal;
-            line-height: 1.3;
-            letter-spacing: 1px;
-            text-align: center;
-            width: 100%;
-            word-wrap: break-word;
-        }
-        
-        .subtitle {
-            font-size: 14px;
-            font-weight: bold;
-            margin-bottom: 5px;
-            color: #2c3e50;
-        }
-        
-        .report-date {
-            font-size: 12px;
-            margin-top: 10px;
-            font-weight: bold;
-        }
-        
-        /* TABLA DE DATOS */
-        .data-table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 20px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-        
-        .data-table th {
-            background: linear-gradient(135deg, #2c3e50, #34495e);
-            color: white;
-            border: 1px solid #000;
-            padding: 8px 8px;
-            text-align: center;
-            font-weight: bold;
-            font-size: 11px;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-        }
-        
-        .data-table td {
-            border: 1px solid #ddd;
-            padding: 6px 8px;
-            text-align: center;
-            font-size: 11px;
-            vertical-align: middle;
-        }
-        
-        .data-table tr:nth-child(even) {
-            background-color: #f8f9fa;
-        }
-        
-        .data-table tr:nth-child(odd) {
-            background-color: #ffffff;
-        }
-        
-        .data-table tr:hover {
-            background-color: #e3f2fd;
-        }
-        
-        /* PRINT STYLES */
-        @media print {
-            body {
-                background: white;
-            }
-            
-            .report-container {
-                box-shadow: none;
-                margin: 0;
-                border: none;
-            }
-            
-            .data-table th {
-                background: #2c3e50 !important;
-                -webkit-print-color-adjust: exact;
-                color-adjust: exact;
-            }
-        }
-        
-        /* RESPONSIVE */
-        @media (max-width: 768px) {
-            .report-container {
-                margin: 10px;
-                padding: 15px;
-            }
-            
-            .main-title {
-                font-size: 16px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="report-container">
-        <!-- HEADER OFICIAL -->
-        <div class="official-header">
-            <div class="header-left">
-                <img src="{{LOGO_URL}}" alt="Logo" class="official-logo">
-            </div>
-            <div class="header-center">
-                <div class="main-title">PROCESO DE SELECCIÓN Y DESIGNACIÓN
-                                         DE SUMARIANTES DISCIPLINARIOS</div>
-                <div class="subtitle">{{SUBTITULO}}</div>
-                <div class="report-date">1 de Agosto de 2025</div>
-            </div>
-        </div>
-        
-        <!-- TABLA DE DATOS -->
-        <table class="data-table">
-            <thead>
-                <tr>
-                    {{ENCABEZADOS_TABLA}}
-                </tr>
-            </thead>
-            <tbody>
-                {{DATOS_TABLA}}
-            </tbody>
-        </table>
-    </div>
-</body>
-</html>
-`
-
-  // Función para generar reporte CI y Nota
-  const generarReporteCINota = (postulantes: any[], meta: any) => {
-    const encabezados = '<th>CI</th><th>NOTA</th>'
-    const filas = postulantes.map((item: any, index: number) => {
-      const nota = item.nota !== undefined && item.nota !== null ? item.nota : (item.puntaje !== undefined && item.puntaje !== null ? item.puntaje : 'N/A')
-      const notaFormateada = nota !== 'N/A' ? `${nota}/35` : 'N/A'
-      
-      return `<tr><td>${item.ci || 'N/A'}</td><td>${notaFormateada}</td></tr>`
-    }).join('')
-    
-    const htmlContent = plantillaReporte
-      .replace('{{TITULO}}', 'REPORTE DE NOTAS')
-      .replace('{{SUBTITULO}}', 'REPORTE DE NOTAS')
-      .replace('{{LOGO_URL}}', '/images/logo.png')
-      .replace('{{FECHA}}', new Date().toLocaleDateString())
-      .replace('{{ENCABEZADOS_TABLA}}', encabezados)
-      .replace('{{DATOS_TABLA}}', filas)
-      .replace('{{TOTAL_POSTULANTES}}', meta.totalPostulantes?.toString() || postulantes.length.toString())
-    
-    return htmlContent
-  }
-
-  // Función para generar reporte Nombre CI y Nota
-  const generarReporteNombreCINota = (postulantes: any[], meta: any) => {
-    const encabezados = '<th>NOMBRE COMPLETO</th><th>CI</th><th>NOTA</th>'
-    const filas = postulantes.map((item: any, index: number) => {
-      const nota = item.nota !== undefined && item.nota !== null ? item.nota : (item.puntaje !== undefined && item.puntaje !== null ? item.puntaje : 'N/A')
-      const notaFormateada = nota !== 'N/A' ? `${nota}/35` : 'N/A'
-      
-      return `<tr><td>${item.nombreCompleto || 'N/A'}</td><td>${item.ci || 'N/A'}</td><td>${notaFormateada}</td></tr>`
-    }).join('')
-    
-    const htmlContent = plantillaReporte
-      .replace('{{TITULO}}', 'REPORTE GENERAL DE NOTAS')
-      .replace('{{SUBTITULO}}', 'REPORTE GENERAL DE NOTAS')
-      .replace('{{LOGO_URL}}', '/images/logo.png')
-      .replace('{{FECHA}}', new Date().toLocaleDateString())
-      .replace('{{ENCABEZADOS_TABLA}}', encabezados)
-      .replace('{{DATOS_TABLA}}', filas)
-      .replace('{{TOTAL_POSTULANTES}}', meta.totalPostulantes?.toString() || postulantes.length.toString())
-    
-    return htmlContent
-  }
-
-  // Función de fallback para usar datos locales
-  const generarReporteConDatosLocales = (tipo: 'ci-nota' | 'nombre-ci-nota') => {
-    const datos = {
-      fecha: new Date().toLocaleDateString(),
-      totalPostulantes: notasPostulanteData.length,
-      titulo: tipo === 'ci-nota' ? 'REPORTE DE NOTAS' : 'REPORTE GENERAL DE NOTAS',
-      postulantes: notasPostulanteData.map((item:any) => {
-        return {
-          ci: item.ci,
-          puntaje: item.puntaje,
-          nota: item.puntaje, // también mapear como nota para compatibilidad
-          nombreCompleto: item.nombrecompleto
-        }
-      })
-    }
-    
-    if (tipo === 'ci-nota') {
-      return generarReporteCINota(datos.postulantes, datos)
-    } else {
-      return generarReporteNombreCINota(datos.postulantes, datos)
-    }
-  }
-
   // Función para obtener reporte CI y nota
   const obtenerReporteCINota = async () => {
     try {
       setLoadingReporte(true)
-      
-      // Llamar al backend para obtener datos estructurados
+  
       const respuesta = await sesionPeticion({
-        url: `${Constantes.baseUrl}/imagen/reporte/ci-nota/html`,
+        url: `${Constantes.baseUrl}/reportes/notas/ci-nota/pdf`,
         tipo: 'get',
+        responseType: 'blob',
       })
-      
-      let htmlContent = ''
-      
-      if (respuesta?.datos && respuesta.datos.postulantes && respuesta.datos.postulantes.length > 0) {
-        const datos = respuesta.datos
-        htmlContent = generarReporteCINota(datos.postulantes, datos)
-      } else {
-        htmlContent = generarReporteConDatosLocales('ci-nota')
+  
+      const pdfBlob = respuesta
+
+      if (!pdfBlob || pdfBlob.type !== 'application/pdf') {
+        throw new Error('La respuesta no es un PDF válido')
       }
-      
-      setReporteHTML(htmlContent)
-      setOpenReporteCINota(true)
-      
-    } catch (e: any) {
-      const htmlContent = generarReporteConDatosLocales('ci-nota')
-      setReporteHTML(htmlContent)
-      setOpenReporteCINota(true)
-      
-      Alerta({ mensaje: `Error al obtener reporte del backend, usando datos locales: ${InterpreteMensajes(e)}`, variant: 'warning' })
+  
+      const pdfUrl = URL.createObjectURL(pdfBlob)
+  
+      setPdfUrl(pdfUrl)
+      setOpenDialog(true)
+    } catch (e) {
+      Alerta({
+        mensaje: 'Error al abrir el PDF',
+        variant: 'error',
+      })
     } finally {
       setLoadingReporte(false)
     }
   }
-
-  // Función para obtener reporte Nombre CI y Nota
+  // Función para obtener reporte Nombre, CI y Nota
   const obtenerReporteNombreCINota = async () => {
     try {
       setLoadingReporteNombreCINota(true)
-      
-      // Llamar al backend para obtener datos estructurados
+  
       const respuesta = await sesionPeticion({
-        url: `${Constantes.baseUrl}/imagen/reporte/nombre-ci-nota/html`,
+        url: `${Constantes.baseUrl}/reportes/notas/nombre-ci-nota/pdf`,
         tipo: 'get',
+        responseType: 'blob',
       })
-      
-      let htmlContent = ''
-      
-      if (respuesta?.datos && respuesta.datos.postulantes && respuesta.datos.postulantes.length > 0) {
-        const datos = respuesta.datos
-        htmlContent = generarReporteNombreCINota(datos.postulantes, datos)
-      } else {
-        htmlContent = generarReporteConDatosLocales('nombre-ci-nota')
+  
+      const pdfBlob = respuesta
+
+      if (!pdfBlob || pdfBlob.type !== 'application/pdf') {
+        throw new Error('La respuesta no es un PDF válido')
       }
-      
-      setReporteNombreCINotaHTML(htmlContent)
-      setOpenReporteNombreCINota(true)
-      
-    } catch (e: any) {
-      const htmlContent = generarReporteConDatosLocales('nombre-ci-nota')
-      setReporteNombreCINotaHTML(htmlContent)
-      setOpenReporteNombreCINota(true)
-      
-      Alerta({ mensaje: `Error al obtener reporte del backend, usando datos locales: ${InterpreteMensajes(e)}`, variant: 'warning' })
+      const pdfUrl = URL.createObjectURL(pdfBlob)
+  
+      setPdfUrl(pdfUrl)
+      setOpenDialog(true)
+    } catch (e) {
+      Alerta({
+        mensaje: 'Error al abrir el PDF',
+        variant: 'error',
+      })
     } finally {
       setLoadingReporteNombreCINota(false)
     }
   }
 
-  // Función para descargar HTML
-  const descargarHTML = () => {
-    if (!reporteHTML) return
-    
-    // Crear un blob con el HTML
-    const blob = new Blob([reporteHTML], { type: 'text/html' })
-    const url = URL.createObjectURL(blob)
-    
-    // Crear un enlace temporal para descargar
-    const link = document.createElement('a')
-    link.href = url
-    link.download = 'reporte-ci-nota.html'
-    document.body.appendChild(link)
-    link.click()
-    document.body.removeChild(link)
-    URL.revokeObjectURL(url)
-    
-    Alerta({ mensaje: 'Reporte descargado correctamente', variant: 'success' })
-  }
-
-  // Función para imprimir HTML
-  const imprimirHTML = () => {
-    if (!reporteHTML) return
-    
-    const printWindow = window.open('', '_blank')
-    if (printWindow) {
-      printWindow.document.write(reporteHTML)
-      printWindow.document.close()
-      
-      // Esperar a que se carguen los estilos antes de imprimir
-      setTimeout(() => {
-        printWindow.focus()
-        printWindow.print()
-        printWindow.close()
-      }, 500)
-    }
-  }
-
-  // Función para imprimir HTML del reporte nombre CI y nota
-  const imprimirHTMLNombreCINota = () => {
-    if (!reporteNombreCINotaHTML) return
-    
-    const printWindow = window.open('', '_blank')
-    if (printWindow) {
-      printWindow.document.write(reporteNombreCINotaHTML)
-      printWindow.document.close()
-      
-      // Esperar a que se carguen los estilos antes de imprimir
-      setTimeout(() => {
-        printWindow.focus()
-        printWindow.print()
-        printWindow.close()
-      }, 500)
-    }
-  }
-
- 
   useEffect(() => {
-    if (estaAutenticado) obtenerCalificacionesPeticion().finally(() => {})   
+    if (estaAutenticado) obtenerCalificacionesPeticion().finally(() => {})
   },[
     estaAutenticado,
     pagina,
     limite,
-    // eslint-disble-nest-line react-ooks/exaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     JSON.stringify(ordenCriterios)
   ])
 
-  // const ordenCriteriosString = JSON.stringify(ordenCriterios)
-  // useEffect(() => {
-  //   if (estaAutenticado) obtenerExameGenePeticion().finally(() => {})   
-  // }, [
-  //   estaAutenticado,
-  //   pagina,
-  //   limite,
-  //   ordenCriteriosString,
-  //   obtenerExameGenePeticion
-  // ])
-
   const paginacion = (
-    < Paginacion
+    <Paginacion
       pagina={pagina}
       limite={limite}
       total={total}
@@ -760,7 +383,7 @@ const Calificar = () => {
       cambioLimite={setLimite}
     />
   )
-  
+
   return (
     <>
     {/* Modal para ver PDF */}
@@ -915,20 +538,21 @@ const Calificar = () => {
 </LayoutUser>
 
       {/* Modal para Estado de Imágenes */}
-      <Dialog
-        open={openEstadoImagenes}
-        onClose={() => setOpenEstadoImagenes(false)}
+      <CustomDialog
+        isOpen={openEstadoImagenes}
+        handleClose={() => setOpenEstadoImagenes(false)}
+        title="Estado de Imágenes"
         maxWidth="md"
-        fullWidth
       >
-        <DialogTitle>
-          Estado de Imágenes
-          {loadingEstadoImagenes && <CircularProgress size={20} sx={{ ml: 2 }} />}
-        </DialogTitle>
         <DialogContent>
-          {estadoImagenes.length > 0 ? (
+          {loadingEstadoImagenes && (
+            <Box sx={{ display: 'flex', justifyContent: 'center', py: 2 }}>
+              <CircularProgress size={24} />
+            </Box>
+          )}
+          {!loadingEstadoImagenes && estadoImagenes.length > 0 && (
             <List>
-              {estadoImagenes.map((imagen:any, index:any) => (
+              {estadoImagenes.map((imagen: any, index: any) => (
                 <ListItem key={index}>
                   <ListItemText
                     primary={imagen.nombre || imagen.ruta || imagen.estado || `Imagen ${index + 1}`}
@@ -937,12 +561,11 @@ const Calificar = () => {
                 </ListItem>
               ))}
             </List>
-          ) : (
-            <Box>
-              <Typography variant="body2" color="text.secondary" mb={2}>
-                No hay datos de estado de imágenes disponibles
-              </Typography>
-            </Box>
+          )}
+          {!loadingEstadoImagenes && estadoImagenes.length === 0 && (
+            <Typography variant="body2" color="text.secondary" mb={2}>
+              No hay datos de estado de imágenes disponibles
+            </Typography>
           )}
         </DialogContent>
         <DialogActions>
@@ -950,131 +573,9 @@ const Calificar = () => {
             Cerrar
           </Button>
         </DialogActions>
-      </Dialog>
-
-      {/* Modal para Reporte CI y Nota */}
-      <Dialog
-        open={openReporteCINota}
-        onClose={() => setOpenReporteCINota(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <DialogTitle>
-          {loadingReporte && <CircularProgress size={20} sx={{ ml: 2 }} />}
-        </DialogTitle>
-        <DialogContent>
-          {reporteHTML ? (
-            <Box>
-              <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<PictureAsPdfIcon />}
-                  onClick={descargarHTML}
-                >
-                  Descargar 
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={imprimirHTML}
-                >
-                  Imprimir
-                </Button>
-              </Box>
-              <Box
-                sx={{
-                  border: '1px solid #ddd',
-                  borderRadius: 1,
-                  p: 2,
-                  maxHeight: '60vh',
-                  overflow: 'auto',
-                  bgcolor: '#f9f9f9'
-                }}
-                dangerouslySetInnerHTML={{ __html: reporteHTML }}
-              />
-            </Box>
-          ) : (
-            <Box>
-              <Typography variant="body2" color="text.secondary" mb={2}>
-                No hay reporte disponible
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenReporteCINota(false)}>
-            Cerrar
-          </Button>
-        </DialogActions>
-      </Dialog>
-
-      {/* Modal para Reporte Nombre CI y Nota */}
-      <Dialog
-        open={openReporteNombreCINota}
-        onClose={() => setOpenReporteNombreCINota(false)}
-        maxWidth="lg"
-        fullWidth
-      >
-        <DialogTitle>
-          {loadingReporteNombreCINota && <CircularProgress size={20} sx={{ ml: 2 }} />}
-        </DialogTitle>
-        <DialogContent>
-          {reporteNombreCINotaHTML ? (
-            <Box>
-              <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
-                <Button
-                  variant="contained"
-                  startIcon={<PictureAsPdfIcon />}
-                  onClick={() => {
-                    const blob = new Blob([reporteNombreCINotaHTML], { type: 'text/html' });
-                    const url = URL.createObjectURL(blob);
-                    const link = document.createElement('a');
-                    link.href = url;
-                    link.download = 'reporte-nombre-ci-nota.html';
-                    document.body.appendChild(link);
-                    link.click();
-                    document.body.removeChild(link);
-                    URL.revokeObjectURL(url);
-                    Alerta({ mensaje: 'Reporte descargado correctamente', variant: 'success' });
-                  }}
-                >
-                  Descargar
-                </Button>
-                <Button
-                  variant="outlined"
-                  onClick={imprimirHTMLNombreCINota}
-                >
-                  Imprimir
-                </Button>
-              </Box>
-              <Box
-                sx={{
-                  border: '1px solid #ddd',
-                  borderRadius: 1,
-                  p: 2,
-                  maxHeight: '60vh',
-                  overflow: 'auto',
-                  bgcolor: '#f9f9f9'
-                }}
-                dangerouslySetInnerHTML={{ __html: reporteNombreCINotaHTML }}
-              />
-            </Box>
-          ) : (
-            <Box>
-              <Typography variant="body2" color="text.secondary" mb={2}>
-                No hay reporte disponible
-              </Typography>
-            </Box>
-          )}
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={() => setOpenReporteNombreCINota(false)}>
-            Cerrar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      </CustomDialog>
     </>
   )
 }
-
 
 export default Calificar
