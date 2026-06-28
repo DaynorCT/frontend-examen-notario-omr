@@ -46,7 +46,7 @@ const Index: NextPage = () => {
 
   return (
     <LayoutLogin title={siteName()}>
-      <Grid container justifyContent="center" alignItems="center" style={{ minHeight: '100vh' }}>
+      <Grid container justifyContent="center"  alignItems="flex-start" style={{ minHeight: '100vh' }}>
         <Grid item xs={12} sm={8} md={5} xl={4}>
           <Box display="flex" justifyContent="center" alignItems="center">
             <LoginRegistroTabContainer />
